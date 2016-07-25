@@ -1,7 +1,10 @@
+//define those parameters
+//$OS_MASTER_URL
+//credentials devops-dev-user to login in OS with
 node {
     stage 'Git checkout'
     echo 'Checking out git repository'
-    git url: 'https://github.com/redhat-helloworld-msa/aloha'
+    git url: 'https://github.com/adrianbele/ospipeline'
 
     stage 'Build project with Maven'
     echo 'Building project'
@@ -11,7 +14,7 @@ node {
 
     stage 'Build image and deploy in Dev'
     echo 'Building docker image and deploying to Dev'
-    buildAloha('helloworld-msa-dev')
+    buildAloha('devops-dev')
 
     stage 'Automated tests'
     echo 'This stage simulates automated tests'
@@ -19,14 +22,14 @@ node {
 
     stage 'Deploy to QA'
     echo 'Deploying to QA'
-    deployAloha('helloworld-msa-dev', 'helloworld-msa-qa')
+    deployAloha('devops-dev', 'devops-qa')
 
     stage 'Wait for approval'
     input 'Aprove to production?'
 
     stage 'Deploy to production'
     echo 'Deploying to production'
-    deployAloha('helloworld-msa-dev', 'helloworld-msa')
+    deployAloha('devops-dev', 'devops-prod')
 }
 
 // Creates a Build and triggers it
@@ -47,9 +50,9 @@ def deployAloha(String origProject, String project){
 
 // Login and set the project
 def projectSet(String project){
-    //Use a credential called openshift-dev
-    withCredentials([[$class: 'UsernamePasswordMultiBinding', credentialsId: 'openshift-dev', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD']]) {
-        sh "oc login --insecure-skip-tls-verify=true -u $env.USERNAME -p $env.PASSWORD https://10.1.2.2:8443"
+    //Use a credential called devops-dev
+    withCredentials([[$class: 'UsernamePasswordMultiBinding', credentialsId: 'devops-dev-user', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD']]) {
+        sh "oc login --insecure-skip-tls-verify=true -u $env.USERNAME -p $env.PASSWORD $OS_MASTER_URL"
     }
     sh "oc new-project ${project} || echo 'Project exists'"
     sh "oc project ${project}"
@@ -62,4 +65,3 @@ def appDeploy(){
     sh 'oc patch dc/aloha -p \'{"spec":{"template":{"spec":{"containers":[{"name":"aloha","ports":[{"containerPort": 8778,"name":"jolokia"}]}]}}}}\''
     sh 'oc patch dc/aloha -p \'{"spec":{"template":{"spec":{"containers":[{"name":"aloha","readinessProbe":{"httpGet":{"path":"/api/health","port":8080}}}]}}}}\''
 }
-
