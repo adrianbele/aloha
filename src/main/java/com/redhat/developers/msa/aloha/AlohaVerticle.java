@@ -71,7 +71,7 @@ public class AlohaVerticle extends AbstractVerticle {
 
         // Health Check
         router.get("/api/health").handler(ctx -> {
-            ctx.response().end("I'm ok now 2000000000");
+            ctx.response().end("I'm ok now WWWWWW");
         });
 
         // Hysrix Stream Endpoint
